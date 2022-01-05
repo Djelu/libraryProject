@@ -1,6 +1,6 @@
 import json
 
-import database_service as db_service
+from services import database_service as db_service
 
 
 def main():
@@ -19,7 +19,6 @@ def main():
         else:
             print(result)
 
-        i = 0
     except Exception as ex:
         print(ex)
 

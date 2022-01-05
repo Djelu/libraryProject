@@ -12,8 +12,8 @@ from selenium.webdriver.common.keys import Keys
 from seleniumwire import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 
-from chromeDriver.configs.proxy_auth_data import login as proxy_login, password as proxy_password, server as proxy_server
-from chromeDriver.configs.rutracker_auth_data import login as tracker_login, password as tracker_password
+from configs.proxy_auth_data import login as proxy_login, password as proxy_password, server as proxy_server
+from configs.rutracker_auth_data import login as tracker_login, password as tracker_password
 
 url = "https://rutracker.org/forum/tracker.php?f=2387"
 
@@ -58,7 +58,7 @@ results = []
 
 
 def login_to_site():
-    cookie_file_name = f"{tracker_login}_cookies"
+    cookie_file_name = f"./books_data/{tracker_login}_cookies"
     cookie_path = Path(cookie_file_name)
     need_auth = False
     if Path.exists(cookie_path) and cookie_path.is_file():
