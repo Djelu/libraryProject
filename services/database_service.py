@@ -11,8 +11,9 @@ def exec_wrapper(execute, *args):
         else:
             conn = create_conn()
         try:
-            execute(conn, *args)
+            res = execute(conn, *args)
             conn.commit()
+            return res
         finally:
             conn.close()
     except Exception as ex:
@@ -55,12 +56,13 @@ def execute_query(query):
 
 
 def json_to_db(data):
-    data = data[:1]
 
     def get_values(book_data):
-        page_id = book_data['url'].split("t=")[1]
+        book_page_id = book_data['url'].split("t=")[1]
         return f"""(
            default,
+           '{book_page_id}',
+           '{book_data['url']}', 
            '{book_data['row_name']}', 
            '{book_data['book_name']}', 
            '{book_data['year']}', 
@@ -78,11 +80,14 @@ def json_to_db(data):
            '{book_data['sampling_frequency']}', 
            '{book_data['count_of_channels']}', 
            '{book_data['book_duration']}', 
-           '{book_data['description']}',
-           '{book_data['url']}', 
-           '{page_id}'
+           '{book_data['description']}'
         )"""
 
     values = map(get_values, data)
     query = "INSERT INTO library.rutracker_books VALUES " + ",".join(values)
-    execute_query(query)
+    return execute_query(query)
+
+
+def get_book_page_ids():
+    result = execute_query("SELECT book_page_id FROM library.rutracker_books ORDER BY book_page_id DESC;")
+    return list(map(lambda it: it['book_page_id'], result))

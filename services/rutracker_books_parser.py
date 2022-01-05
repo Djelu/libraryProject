@@ -54,11 +54,12 @@ matches = {
     "description": "Описание",
 }
 
-results = []
+db_book_ids = []
+curr_book_ids = []
 
 
 def login_to_site():
-    cookie_file_name = f"./books_data/{tracker_login}_cookies"
+    cookie_file_name = f"./cookies/{tracker_login}_cookies"
     cookie_path = Path(cookie_file_name)
     need_auth = False
     if Path.exists(cookie_path) and cookie_path.is_file():
@@ -92,7 +93,7 @@ def auth():
 
 def get_search_pages():
     elems = driver.find_elements(By.CLASS_NAME, "pg")
-    return set(map(lambda el: el.get_attribute("href"), elems))
+    return list(set(map(lambda el: el.get_attribute("href"), elems)))
 
 
 def open_new_tab(page_url):
@@ -106,12 +107,16 @@ def close_current_tab():
     driver.switch_to.window(driver.window_handles[0])
 
 
-def get_rows_data():
+def get_rows_data(page_url):
+    if page_url is not None:
+        driver.get(page_url)
     elems = driver.find_elements(By.XPATH, "//tr[starts-with(@id,'trs-tr-')]/td[4]/div[1]/a")
-    return list(map(lambda el: {
+    result = list(map(lambda el: {
+        "book_page_id": el.get_attribute("href").split("t=")[1],
         "href": el.get_attribute("href"),
         "row_name": el.text
     }, elems))
+    return exclude_existing_books(result)
 
 
 def get_book_data_by_type(root_item, book_data_type):
@@ -121,7 +126,7 @@ def get_book_data_by_type(root_item, book_data_type):
         if item.text == book_data_type:
             if book_data_type == "Описание":
                 val = ""
-                for j in range(i + 1, items.__len__() - 1):
+                for j in range(i + 1, len(items) - 1):
                     if type(items[j]) == bs4.element.NavigableString:
                         val += items[j].text + "\n\n"
                     else:
@@ -153,29 +158,45 @@ def get_book_data(row_data):
     return book_data
 
 
-def get_books_data(page_url):
+def exclude_existing_books(rows_data):
+    def foo(row_data):
+        book_page_id = row_data["book_page_id"]
+        return book_page_id not in curr_book_ids and book_page_id not in db_book_ids
+    return list(filter(foo, rows_data))
+
+
+def get_books_data(page_url=None):
     result = []
-    if page_url is not None:
-        driver.get(page_url)
-    for row_data in get_rows_data():
+    rows_data = get_rows_data(page_url)
+    curr_book_ids.extend(list(map(lambda it: it["book_page_id"], rows_data)))
+    count = len(rows_data)
+    for row_data in rows_data:
         driver.get(row_data["href"])
         books_data = get_book_data(row_data)
         result.append(books_data)
+        print(f"book: {len(result)}/{count}")
     close_current_tab()
     return result
 
 
 def get_all_books_data():
     search_pages = get_search_pages()
-    result = get_books_data(None)
+    count = len(search_pages) + 1
+    print(f"page: {1}/{count}")
+    result = get_books_data()
+    i = 2
     for page_url in search_pages:
+        print(f"page: {i}/{count}")
         result.extend(get_books_data(page_url))
+        i = i + 1
     return result
 
 
-def parse():
+def parse(exclude_ids=None):
     driver.get(url)
     login_to_site()
+    if exclude_ids is not None:
+        db_book_ids.extend(exclude_ids)
     return get_all_books_data()
 
 
