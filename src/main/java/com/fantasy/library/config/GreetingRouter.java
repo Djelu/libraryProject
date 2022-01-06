@@ -7,13 +7,13 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.server.*;
 
 
-@Configuration()
+@Configuration
 public class GreetingRouter {
 
     @Bean
     public RouterFunction<ServerResponse> route(GreetingHandler greetingHandler) {
         final RequestPredicate route = RequestPredicates
-                .GET("/hello")
+                .GET("/")
                 .and(RequestPredicates.accept(MediaType.TEXT_PLAIN));
 
         return RouterFunctions
