@@ -15,7 +15,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from configs.proxy_auth_data import login as proxy_login, password as proxy_password, server as proxy_server
 from configs.rutracker_auth_data import login as tracker_login, password as tracker_password
 
-url = "https://rutracker.org/forum/tracker.php?f=2387"
+urls = []
 
 proxy_options = {
     "proxy": {
@@ -58,7 +58,7 @@ db_book_ids = []
 curr_book_ids = []
 
 
-def login_to_site():
+def login_to_site(url):
     cookie_file_name = f"./cookies/{tracker_login}_cookies"
     cookie_path = Path(cookie_file_name)
     need_auth = False
@@ -192,12 +192,34 @@ def get_all_books_data():
     return result
 
 
-def parse(exclude_ids=None):
+def parse(pars, extend_books_to_db=None):
+    prepare_pars(pars)
+    result = []
+    i = 1
+    for url in urls:
+        print(f"url: {url}")
+        books_data = get_books_from_url(url)
+        if extend_books_to_db is not None:
+            extend_books_to_db(books_data, i)
+        result.extend(books_data)
+        i = i + 1
+    return result
+
+
+def get_books_from_url(url):
     driver.get(url)
-    login_to_site()
-    if exclude_ids is not None:
-        db_book_ids.extend(exclude_ids)
+    login_to_site(url)
     return get_all_books_data()
+
+
+def prepare_pars(pars=None):
+    if pars is not None:
+        if pars['urls'] is not None:
+            urls.extend(pars['urls'])
+        else:
+            urls.append("https://rutracker.org/forum/tracker.php?f=2387")
+        if pars['exclude_ids'] is not None:
+            db_book_ids.extend(pars['exclude_ids'])
 
 
 def flatten(t):
