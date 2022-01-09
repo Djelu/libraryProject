@@ -19,7 +19,7 @@ def main():
 
 
 def extend_books_to_db(books_data, index):
-    tmp_file = f'./books_data/data{index}.json'
+    tmp_file = f'books_data/data{index}.json'
     with open(tmp_file, 'w', encoding='utf-8') as f:
         json.dump(books_data, f)
     with open(tmp_file, 'r', encoding='utf-8') as f:
