@@ -2,14 +2,17 @@ import axios from "axios";
 import {wait} from "@testing-library/user-event/dist/utils";
 
 export default class BookService {
-    static async getAll(limit = 10, page = 1) {
-        // const response = await axios.get('https://jsonplaceholder.typicode.com/posts', {
-        //     params: {
-        //         _limit: limit,
-        //         _page: page
-        //     }
-        // })
-        const response = await getBooksData();
+    static async getAll(limit = 99999, page = 1) {
+        const response = await axios.get('http://localhost:8080/books/getBooks', {
+            // headers: {
+            //     "Access-Control-Allow-Origin": "*"
+            // },
+            params: {
+                limit: limit,
+                page: page
+            }
+        })
+        // const response = await getBooksData();
 
         return response
     }

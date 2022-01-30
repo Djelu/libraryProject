@@ -4,11 +4,11 @@ import classes from "./Col.module.css";
 const Col = ({colName, sortFoo}) => {
     let innerText;
     switch (colName) {
-        case "book_name": innerText = "Название"; break;
+        case "bookName": innerText = "Название"; break;
         case "author": innerText = "Автор"; break;
         case "genre": innerText = "Жанры"; break;
         case "year": innerText = "Год"; break;
-        case "book_duration": innerText = "Длина"; break;
+        case "bookDuration": innerText = "Длина"; break;
     }
 
     const [isUp, setIsUp] = useState(null);

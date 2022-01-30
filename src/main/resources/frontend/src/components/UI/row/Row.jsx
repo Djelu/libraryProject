@@ -3,17 +3,17 @@ import ConvertingService from "../../../API/ConvertingService";
 import classes from "./Row.module.css";
 
 const Row = ({data, cols, index}) => {
-    const {url, book_name, last_name, fist_name} = data;
+    const {url, bookName, lastName, fistName} = data;
     return (
         <tr className={classes.tCenter}>
             {cols.map(colName => {
                 let innerElem;
                 switch (colName) {
-                    case "book_name":
-                        innerElem = <a href={url}>{book_name}</a>
+                    case "bookName":
+                        innerElem = <a href={url}>{bookName}</a>
                         break;
                     case "author":
-                        innerElem = <span>{ConvertingService.getAuthor(fist_name, last_name)}</span>
+                        innerElem = <span>{ConvertingService.getAuthor(fistName, lastName)}</span>
                         break;
                     case "genre":
                         innerElem = <div className={classes.inColumn}>

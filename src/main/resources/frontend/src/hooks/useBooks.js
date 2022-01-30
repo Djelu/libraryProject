@@ -1,7 +1,7 @@
 import {useMemo} from "react";
 import ConvertingService from "../API/ConvertingService";
 
-export const useSortedBooks = (books, sort) => {
+const useSortedBooks = (books, sort) => {
     return useMemo(() => {
         const sortCols = Object.keys(sort).filter(k => sort[k] != null);
         if (sortCols.length === 0)
@@ -45,11 +45,15 @@ const getSumOfValues = (data, keys) => {
     return keys.map(k => data[k]).join(" ")
 }
 
+export const useFilteredBooks = (books, query) => {
+    return useMemo(() => {
+        return books.filter(book => book.bookName.includes(query))
+    }, [query, books])
+}
+
 export const useBooks = (books, filter) => {
     const {sort, query} = filter;
-    const sortedPosts = useSortedBooks(books, sort)
-
-    return useMemo(() => {
-        return sortedPosts.filter(book => book.book_name.includes(query))
-    }, [query, sortedPosts]);
+    const sortedBooks = useSortedBooks(books, sort)
+    const filteredBooks = useFilteredBooks(sortedBooks, query)
+    return filteredBooks;
 }

@@ -1,6 +1,6 @@
 export default class Converting {
-    static getAuthor(fist_name, last_name){
-        return last_name + " " + fist_name;
+    static getAuthor(fistName, lastName){
+        return lastName + " " + fistName;
     }
     static getGenre(genreStr){
         return genreStr.split(",").map((g, index) =>
@@ -10,7 +10,7 @@ export default class Converting {
     static getColDepends(name){
         switch (name){
             case "author":
-                return ["fist_name", "last_name"]
+                return ["fistName", "lastName"]
             default:
                 return [name];
         }

@@ -8,7 +8,8 @@ import BooksCols from "./BooksCols";
 import HandledElem from "./HandledElem";
 
 const Books = () => {
-    const cols = ["book_name", "author", "genre", "year", "book_duration"];
+    // const cols = ["book_name", "author", "genre", "year", "book_duration"];
+    const cols = ["bookName", "author", "genre", "year", "bookDuration"];
     const getDefaultSort = function (){
         let result = {};
         cols.forEach(colName => result[colName] = null)
@@ -22,7 +23,7 @@ const Books = () => {
 
     const [fetchBooks, isBooksLoading, booksError] = useFetching(async (limit, page) => {
         const response = await BookService.getAll(limit, page);
-        setBooks([...response])
+        setBooks([...response.data])
     })
 
     useEffect(() => {
