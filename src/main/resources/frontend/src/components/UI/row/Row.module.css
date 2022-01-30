@@ -1,0 +1,24 @@
+tr {
+    display: table-row;
+    border-color: inherit;
+}
+
+td {
+    font: 12px Verdana, Arial, sans-serif;
+    vertical-align: top;
+    border: 1px solid teal;
+}
+
+.tCenter {
+    text-align: center !important;
+}
+
+.tLeft {
+    text-align: left !important;
+}
+
+.inColumn {
+    display: flex;
+    flex-flow: wrap;
+    flex-direction: column;
+}
