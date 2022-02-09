@@ -5,7 +5,7 @@ const BooksCols = ({cols, sortFoo}) => {
     return (
         <tr>
             {cols.map((colName, index) =>
-                <Col key={index} colName={colName} sortFoo={sortFoo}/>
+                <Col key={index} colName={colName} index={index} sortFoo={sortFoo}/>
             )}
         </tr>
     );

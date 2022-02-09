@@ -8,7 +8,7 @@ const HandledElem = ({children, error, isLoading}) => {
     return (
         <SpecMsg> {
             error
-                ? <h1>Произошла ошибка ${error}</h1>
+                ? <div/>
                 : <Loader/>
         }</SpecMsg>
     );

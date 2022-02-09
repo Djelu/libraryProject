@@ -38,6 +38,10 @@ public class Book {
     @Getter@Setter private String category;
     @Getter@Setter private String bitrate;
     @Getter@Setter private String description;
+    @Getter@Setter private String imgUrl;
+    @Getter@Setter private String magnetLink;
+    @Getter@Setter private String torSize;
+    @Getter@Setter private Boolean noBook;
 
     public static Book toModel(BookEntity entity) throws NoSuchFieldException, IllegalAccessException {
         Book book = new Book();

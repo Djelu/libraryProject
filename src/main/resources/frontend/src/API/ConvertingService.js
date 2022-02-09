@@ -7,12 +7,29 @@ export default class Converting {
                 <span key={g + "_" + index}>{g.trim()}</span>
             );
     }
-    static getColDepends(name){
-        switch (name){
+    static getValueFromBook(data, colName){
+        switch (colName){
+            case "author":
+                const colDepends = this.getColDepends(colName)
+                return this.getAuthor(data[colDepends[0]], data[colDepends[1]]);
+            default:
+                return data[colName];
+        }
+    }
+    static getColDepends(colName){
+        switch (colName){
             case "author":
                 return ["fistName", "lastName"]
             default:
-                return [name];
+                return [colName];
+        }
+    }
+    static getKBValue(value, type){
+        switch (type.toUpperCase()){
+            case "TB": return value * 1000000000;
+            case "GB": return value * 1000000;
+            case "MB": return value * 1000;
+            default: return value;
         }
     }
 }

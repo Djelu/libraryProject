@@ -6,18 +6,19 @@ import {useBooks} from "../hooks/useBooks";
 import BooksRows from "./BooksRows";
 import BooksCols from "./BooksCols";
 import HandledElem from "./HandledElem";
+import MyTable from "./UI/myTable/MyTable";
+import Filter from "./UI/filter/Filter";
 
 const Books = () => {
-    // const cols = ["book_name", "author", "genre", "year", "book_duration"];
-    const cols = ["bookName", "author", "genre", "year", "bookDuration"];
-    const getDefaultSort = function (){
+    const cols = ["bookName", "imgUrl", "author", "genre", "year", "torUrl", "torSize", "bookDuration"];
+    const getDefaultValues = function (){
         let result = {};
         cols.forEach(colName => result[colName] = null)
         return result
     }
 
     const [books, setBooks] = useState([]);
-    const [filter, setFilter] = useState({sort: getDefaultSort(), query: ''})
+    const [booksData, setBooksData] = useState({sort: getDefaultValues(), filter: getDefaultValues()})
     const [limit, setLimit] = useState(10);
     const [page, setPage] = useState(1);
 
@@ -30,26 +31,36 @@ const Books = () => {
         fetchBooks(limit, page)
     }, [limit, page])
 
-    const resultBooks = useBooks(books, filter)
+    const resultBooks = useBooks(books, booksData)
 
-    const sortByRow = function (colName, isUp){
-        let newSort = {...filter.sort}
+    const sortByCol = function (colName, isUp){
+        let newSort = {...booksData.sort}
         newSort[colName] = isUp
-        setFilter({...filter, sort: newSort})
+        setBooksData({...booksData, sort: newSort})
     }
 
-    return (
-        <table>
-            <thead>
-                <BooksCols sortFoo={sortByRow} cols={cols}/>
-            </thead>
-            <tbody>
-                <HandledElem isLoading={isBooksLoading} error={booksError}>
-                    <BooksRows books={resultBooks} cols={cols}/>
-                </HandledElem>
-            </tbody>
-        </table>
-    );
+    const filterByCol = function (colName, value){
+        let newFilter = {...booksData.filter}
+        newFilter[colName] = value
+        setBooksData({...booksData, filter: newFilter})
+    }
+
+    return (<div>
+        <Filter cols={cols} filterFoo={filterByCol}/>
+        <MyTable
+            sortFoo={sortByCol}
+            cols={cols}
+            booksData={{
+                resultBooks,
+                isBooksLoading,
+                booksError
+            }}
+        />
+        {booksError
+            ?<h1>Произошла ошибка ${booksError}</h1>
+            :<div/>
+        }
+    </div>);
 };
 
 export default Books;

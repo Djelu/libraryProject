@@ -27,6 +27,10 @@ public class BookEntity {
     @Column(name="sampling_frequency")  @Getter@Setter private String samplingFrequency;
     @Column(name="count_of_channels")   @Getter@Setter private String countOfChannels;
     @Column(name="book_duration")       @Getter@Setter private String bookDuration;
+    @Column(name="img_url")             @Getter@Setter private String imgUrl;
+    @Column(name="magnet_link")         @Getter@Setter private String magnetLink;
+    @Column(name="tor_size")            @Getter@Setter private String torSize;
+    @Column(name="no_book")             @Getter@Setter private Boolean noBook;
 
     @Getter@Setter private String url;
     @Getter@Setter private String year;

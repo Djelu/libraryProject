@@ -19,6 +19,7 @@ public class BookService {
     public List<Book> getBooks() {
         return bookRepo.findAll()
                 .stream()
+                .filter(entity -> !entity.getNoBook())
                 .map(entity -> {
                     try {
                         return Book.toModel(entity);
