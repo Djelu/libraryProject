@@ -88,6 +88,40 @@ def json_to_db(data):
     return execute_query(query)
 
 
+def additional_data_to_db(data):
+
+    def get_sql_value(book_data, key):
+        if key in book_data:
+            if key == "no_book":
+                value = book_data[key]
+            else:
+                value = f"'{book_data[key]}'"
+        else:
+            value = "null"
+        return value
+
+    def get_values(book_data):
+        return f"""
+           {get_sql_value(book_data, 'id')}, 
+           {get_sql_value(book_data, 'img_url')},
+           {get_sql_value(book_data, 'magnet_link')},
+           {get_sql_value(book_data, 'tor_size')},
+           {get_sql_value(book_data, 'no_book')}
+        """
+
+    values = "),(".join(map(get_values, data))
+    query = f"""INSERT INTO library.rutracker_books 
+                    (id, img_url, magnet_link, tor_size, no_book) 
+                VALUES  ({values})
+                ON DUPLICATE KEY UPDATE 
+                    img_url = VALUES(img_url),
+                    magnet_link = VALUES(magnet_link),
+                    tor_size = VALUES(tor_size),
+                    no_book = VALUES(no_book);
+            """
+    return execute_query(query)
+
+
 def get_book_page_ids():
     result = execute_query("SELECT book_page_id FROM library.rutracker_books ORDER BY book_page_id DESC;")
     return list(map(lambda it: it['book_page_id'], result))

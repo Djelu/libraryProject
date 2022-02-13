@@ -206,6 +206,66 @@ def parse(pars, extend_books_to_db=None):
     return result
 
 
+def parse_additional_data(books_data):
+    login_url = "https://rutracker.org/forum/login.php"
+    driver.get(login_url)
+    login_to_site(login_url)
+    result = []
+    try:
+        lll = len(books_data)
+        i = 1
+        for book_data in books_data:
+            # if i < 599:
+            #     print(f"{i}/{lll}")
+            #     i = i + 1
+            #     continue
+            book_id = book_data['id']
+            url = book_data['url']
+            book_page_id = book_data['book_page_id']
+            driver.get(url)
+            soup = bs(driver.page_source, features="html.parser")
+            post_body = soup.find("div", {"class": "post_body"})
+            data = {
+                "id": book_id
+            }
+
+            if post_body is None:
+                result.append({
+                    "id": book_id,
+                    "no_book": "true"
+                })
+                i = i + 1
+                continue
+            else:
+                data["no_book"] = "false"
+
+            img = post_body.find("img", {"class": "postImg"})
+            if img is not None:
+
+                if "post-img-broken" in img.attrs['class']:
+                    img_url = img.attrs['title']
+                else:
+                    img_url = img.attrs['src']
+                data["img_url"] = img_url
+
+            table = soup.find("div", {"class": "post_wrap"}).find("table")
+            if table is not None:
+                a = table.find("a", {"data-topic_id": book_page_id})
+                if a is not None:
+                    magnet_link = a.attrs['href']
+                    tor_size = table.find("span", {"id": "tor-size-humn"}).text
+                    data["magnet_link"] = magnet_link
+                    data["tor_size"] = tor_size
+
+            result.append(data)
+            print(f"{i}/{lll}")
+            i = i + 1
+    except Exception:
+        print("пум")
+
+    return result
+
+
 def get_books_from_url(url):
     driver.get(url)
     login_to_site(url)
