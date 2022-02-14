@@ -1,3 +1,7 @@
+.filterThContent{
+    width: 100%;
+    display: flex;
+}
 .filter1{
     width: 26.5%;
 }

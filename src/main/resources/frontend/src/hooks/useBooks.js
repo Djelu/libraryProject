@@ -1,31 +1,34 @@
 import {useMemo} from "react";
 import ConvertingService from "../API/ConvertingService";
 
-const useFilteredBooks = (books, filter) => {
+const useFilteredBooks = (books, filter, filterType) => {
     return useMemo(() => {
         const filterCols = Object.keys(filter).filter(k => filter[k] != null);
         if (filterCols.length === 0)
             return books;
         return [...books.filter(book => {
             for (const colName of filterCols) {
-                if(!filterWasPassed(ConvertingService.getValueFromBook(book, colName), filter[colName], colName))
+                const bookValue = ConvertingService.getValueFromBook(book, colName);
+                if(!filterWasPassed(bookValue, filter[colName], filterType[colName], colName))
                     return false;
             }
             return true;
         })]
-    }, [filter, books])
+    }, [filter, filterType, books])
 }
 
-const filterWasPassed = (bookValue, filterValue, colName) => {
+const filterWasPassed = (bookValue, filterValue, filterTypeIsStraight, colName) => {
+    if(!filterValue)return true;
+    const passed = filterTypeIsStraight
+        ? (val1, val2) => val1.includes(val2)
+        : (val1, val2) => !val1.includes(val2);
     switch (colName){
         case "author":
-            for(let fVal of filterValue.split(" ")){
-                if(!bookValue.includes(fVal))
-                    return false
-            }
-            return true;
-        default:
-            return bookValue.toLowerCase().includes(filterValue.toLowerCase());
+            const val1 = bookValue.toLowerCase();
+            return filterValue.split(" ").every(fVal => passed(val1, fVal.toLowerCase()));
+        default: {
+            return passed(bookValue.toLowerCase(), filterValue.toLowerCase());
+        }
     }
 }
 
@@ -146,8 +149,8 @@ const getSumOfValues = (data, keys) => {
 }
 
 export const useBooks = (books, booksData) => {
-    const {sort, filter} = booksData;
+    const {sort, filter, filterType} = booksData;
     const sortedBooks = useSortedBooks(books, sort)
-    const filteredBooks = useFilteredBooks(sortedBooks, filter)
+    const filteredBooks = useFilteredBooks(sortedBooks, filter, filterType)
     return filteredBooks;
 }

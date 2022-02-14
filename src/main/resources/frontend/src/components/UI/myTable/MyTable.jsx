@@ -12,9 +12,7 @@ const MyTable = ({cols, sortFoo, booksData}) => {
                 <BooksCols sortFoo={sortFoo} cols={cols}/>
             </thead>
             <tbody>
-                <HandledElem isLoading={isBooksLoading} error={booksError}>
-                    <BooksRows books={resultBooks} cols={cols}/>
-                </HandledElem>
+                <BooksRows books={resultBooks} cols={cols}/>
             </tbody>
         </table>
     );
