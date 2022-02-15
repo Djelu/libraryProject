@@ -5,7 +5,7 @@ import classes from "./Row.module.css";
 const Row = ({data, cols, index}) => {
     const {url, bookName} = data;
     return (
-        <tr className={classes.tCenter}>
+        <div className={classes.tCenter}>
             {cols.map(colName => {
                 let innerElem;
                 switch (colName) {
@@ -36,7 +36,7 @@ const Row = ({data, cols, index}) => {
                 }
                 return <td key={colName + "_" + index} className={classes.tLeft}>{innerElem}</td>
             })}
-        </tr>
+        </div>
     );
 };
 

@@ -5,16 +5,18 @@ import BooksRows from "../../BooksRows";
 import classes from "./MyTable.module.css";
 
 const MyTable = ({cols, sortFoo, booksData}) => {
-    const {resultBooks, isBooksLoading, booksError} = booksData;
+    const {resultBooks} = booksData;
     return (
-        <table className={classes.foo}>
-            <thead>
+        <div>
+            <table className={classes.foo}>
+                <thead>
                 <BooksCols sortFoo={sortFoo} cols={cols}/>
-            </thead>
-            <tbody>
-                <BooksRows books={resultBooks} cols={cols}/>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <BooksRows books={resultBooks} cols={cols}/>
+        </div>
     );
 };
 
