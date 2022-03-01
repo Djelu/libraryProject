@@ -2,3 +2,42 @@
     table-layout: fixed;
     width: 100%;
 }
+/*.main_container{
+    display: grid;
+    grid-template-columns: 1fr;
+}
+.titles_container{
+    display: grid;
+    grid-template-columns: 3fr 2fr 1fr 1fr 1fr 1fr 1fr 1fr;
+}*/
+.items_container{
+    display: grid;
+    grid-template-columns: 30% 200px 1fr 1fr 40px 60px 1fr 80px;
+}
+.item{
+    border: 1px solid black;
+}
+.item1{
+
+}
+.item2{
+
+}
+.item3{
+
+}
+.item4{
+
+}
+.item5{
+
+}
+.item6{
+
+}
+.item7{
+
+}
+.item8{
+
+}

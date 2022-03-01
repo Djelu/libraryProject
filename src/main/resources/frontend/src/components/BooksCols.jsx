@@ -1,13 +1,13 @@
 import React from 'react';
 import Col from "./UI/col/Col";
+import classes from "./UI/myTable/MyTable.module.css";
 
 const BooksCols = ({cols, sortFoo}) => {
     return (
-        <tr>
-            {cols.map((colName, index) =>
-                <Col key={index} colName={colName} index={index} sortFoo={sortFoo}/>
-            )}
-        </tr>
+        cols.map((colName, index) =>
+            <Col key={index} colName={colName} sortFoo={sortFoo}
+                 itemClassName={classes.item + " " + (classes["item"+(index+1)])}/>
+        )
     );
 };
 

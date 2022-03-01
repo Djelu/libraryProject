@@ -10,7 +10,7 @@ const MyCheckbox = ({value, onClick, children, plusMinus=false}) => {
                     : "-"}
             </div>
             : <div>
-                <input type="checkbox" checked={value} onClick={onClick}/>
+                <input type="checkbox" checked={value} onChange={onClick}/>
                 <label>{children}</label>
             </div>
     );

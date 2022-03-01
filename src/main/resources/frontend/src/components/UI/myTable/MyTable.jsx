@@ -1,20 +1,13 @@
 import React from 'react';
 import BooksCols from "../../BooksCols";
-import HandledElem from "../../HandledElem";
 import BooksRows from "../../BooksRows";
-import classes from "./MyTable.module.css";
+import classes from "./MyTable.module.css"
 
 const MyTable = ({cols, sortFoo, booksData}) => {
     const {resultBooks} = booksData;
     return (
-        <div>
-            <table className={classes.foo}>
-                <thead>
-                <BooksCols sortFoo={sortFoo} cols={cols}/>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+        <div className={classes.items_container}>
+            <BooksCols sortFoo={sortFoo} cols={cols}/>
             <BooksRows books={resultBooks} cols={cols}/>
         </div>
     );

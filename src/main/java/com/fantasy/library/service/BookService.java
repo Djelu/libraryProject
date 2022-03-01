@@ -1,4 +1,4 @@
-package com.fantasy.library;
+package com.fantasy.library.service;
 
 import com.fantasy.library.model.Book;
 import com.fantasy.library.repository.BookRepo;
