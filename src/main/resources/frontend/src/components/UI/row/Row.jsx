@@ -2,13 +2,19 @@ import React from 'react';
 import ConvertingService from "../../../API/ConvertingService";
 import classes from "./Row.module.css";
 
-const Row = ({data, cols, index, itemClassName}) => {
+const Row = ({data, cols, rowIndex, setOpenedRow, rowOpened, itemClassName}) => {
     const {url, bookName} = data;
-    return (cols.map(colName => {
+    return (cols.map((colName, colIndex) => {
         let innerElem;
         switch (colName) {
             case "bookName":
-                innerElem = <a href={url}>{bookName}</a>
+                innerElem = rowOpened
+                    ?<div>
+                        <a href={url}>{bookName}</a>
+                        <br/>
+                        <span>{data["description"]}</span>
+                    </div>
+                    :<a href={url}>{bookName}</a>
                 break;
             case "author":
                 innerElem = <span>{ConvertingService.getValueFromBook(data, colName)}</span>
@@ -19,7 +25,9 @@ const Row = ({data, cols, index, itemClassName}) => {
                 </div>
                 break;
             case "imgUrl":
-                innerElem = <img src={data[colName]} alt="pic" width="200" height="200"/>
+                innerElem = <img src={data[colName]} alt="pic"
+                                 className={rowOpened ?classes.item_opened_img :classes.item_closed_img}
+                />
                 break;
             case "torUrl":
                 innerElem =
@@ -35,7 +43,11 @@ const Row = ({data, cols, index, itemClassName}) => {
             default:
                 innerElem = <span>{data[colName]}</span>
         }
-        return <div key={colName+"_"+index} className={itemClassName}>{innerElem}</div>;
+        const additionClass = (rowOpened ?classes["item_opened_col"+(colIndex+1)] :"");
+        return <div key={colName+"_"+rowIndex}
+                    className={itemClassName+" "+additionClass}
+                    onClick={() => {setOpenedRow(rowIndex); return false}}>{innerElem}
+        </div>;
     }));
 };
 

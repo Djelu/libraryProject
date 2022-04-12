@@ -22,3 +22,41 @@ td {
     flex-flow: wrap;
     flex-direction: column;
 }
+
+.item_opened_col1{
+    grid-column: 1/5;
+}
+.item_opened_col2{
+    grid-column: 5/9;
+}
+.item_opened_col3{
+    display: none;
+}
+.item_opened_col4{
+    display: none;
+}
+.item_opened_col5{
+    display: none;
+}
+.item_opened_col6{
+    display: none;
+}
+.item_opened_col7{
+    display: none;
+}
+.item_opened_col8{
+    display: none;
+}
+.item_opened_col9{
+    display: none;
+}
+.item_closed_img{
+    width: 200px;
+    height: 200px;
+}
+.item_opened_img{
+    width: 400px;
+    height: 400px;
+    min-width: 400px;
+    min-height: 400px
+}
