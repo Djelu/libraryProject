@@ -3,7 +3,8 @@ import pymysql
 from configs.db_auth_data import host, port, user, password, db_name
 
 
-def exec_wrapper(execute, *args):
+def exec_wrapper(execute, *args, commit=True):
+    conn = None
     try:
         if len(args) == 2:
             conn = args[0]
@@ -12,11 +13,19 @@ def exec_wrapper(execute, *args):
             conn = create_conn()
         try:
             res = execute(conn, *args)
-            conn.commit()
+            if commit:
+                conn.commit()
+            else:
+                return conn
             return res
         finally:
-            conn.close()
+            if commit:
+                conn.close()
+            else:
+                return conn
     except Exception as ex:
+        if not commit and conn is not None:
+            conn.close()
         return ex
 
 
@@ -55,8 +64,31 @@ def execute_query(query):
     return exec_wrapper(lambda c, q: exec_query(c, fix_query(q)), query)
 
 
-def json_to_db(data):
+def execute_queries(queries):
+    results = []
+    conn = None
+    try:
+        for query in queries:
+            if conn is None:
+                args = [query]
+            else:
+                args = [conn, query]
+            result = exec_wrapper(lambda c, q: exec_query(c, fix_query(q)), *args, commit=False)
+            results.append(result)
+            if result is not None:
+                if not isinstance(result, str):
+                    conn = result
+                else:
+                    return result  # Exception
+        conn.commit()
+        return results
+    except Exception as ex:
+        return ex
+    finally:
+        conn.close()
 
+
+def json_to_db(data):
     def get_values(book_data):
         book_page_id = book_data['url'].split("t=")[1]
         return f"""(
@@ -125,3 +157,13 @@ def additional_data_to_db(data):
 def get_book_page_ids():
     result = execute_query("SELECT book_page_id FROM library.rutracker_books ORDER BY book_page_id DESC;")
     return list(map(lambda it: it['book_page_id'], result))
+
+
+def get_update_book_data_query(row_id, par_name, par_value):
+    query = f"""
+        UPDATE rutracker_books
+        SET {par_name} = {par_value}
+        WHERE id = {row_id}
+    """
+    # print(query)
+    return query

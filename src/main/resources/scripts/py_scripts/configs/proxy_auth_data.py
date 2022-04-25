@@ -1,4 +1,4 @@
 # https://proxy6.net/
-server = "81.177.27.6:48478"
-login = "CF0ckt"
-password = "RNEkTf"
+server = "217.29.53.111:12426"
+login = "AH0Q6m"
+password = "xLA8m9"

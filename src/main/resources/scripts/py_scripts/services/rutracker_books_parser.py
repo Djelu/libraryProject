@@ -73,7 +73,9 @@ def login_to_site(url):
 
     if need_auth:
         auth()
-        pickle.dump(driver.get_cookies(), open(cookie_file_name, "wb"))
+        with open(cookie_file_name, 'wb+') as f:
+            pickle.dump(driver.get_cookies(), f)
+
     if driver.current_url != url:
         driver.get(url)
     time.sleep(1)
@@ -123,16 +125,21 @@ def get_book_data_by_type(root_item, book_data_type):
     items = root_item.contents
     i = 0
     for item in items:
-        if item.text == book_data_type:
+        if str.startswith(str.lstrip(item.text), book_data_type):
             if book_data_type == "Описание":
-                val = ""
-                for j in range(i + 1, len(items) - 1):
-                    if type(items[j]) == bs4.element.NavigableString:
-                        val += items[j].text + "\n\n"
+                text = str.strip(item.text[10:])
+                if len(text) > 0:
+                    val = text
+                else:
+                    val = ""
+                for j in range(i + 1, len(items)):
+                    it = items[j]
+                    if type(it) == bs4.element.NavigableString:
+                        val += it.text + "\n\n"
                     else:
-                        if items[j].attrs.get("class") is not None and "post-hr" in items[j].attrs.get("class"):
-                            return cut_off_excess(val)
-
+                        if it.attrs.get("class") is not None and "post-hr" in it.attrs.get("class"):
+                            break
+                return cut_off_excess(val)
             else:
                 return cut_off_excess(items[i + 1].text)
         i = i + 1
@@ -284,3 +291,18 @@ def prepare_pars(pars=None):
 
 def flatten(t):
     return [item for sublist in t for item in sublist]
+
+
+def first_login():
+    login_url = "https://rutracker.org/forum/login.php"
+    driver.get(login_url)
+    login_to_site(login_url)
+
+
+def get_book_data_value_by_par_name(book_url, par_name):
+    driver.get(book_url)
+    soup = bs(driver.page_source, features="html.parser")
+    root_item = soup.find('div', attrs={'class': 'post_body'})
+    if par_name == "description":
+        return get_book_data_by_type(root_item, matches[par_name])
+    return None
