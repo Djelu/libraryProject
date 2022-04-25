@@ -6,7 +6,8 @@ from multiprocessing import Pool
 
 
 from services import database_service as db_service
-from services import rutracker_books_parser_v2 as rutracker
+from services import rutracker_books_parser_v3 as rutracker
+from configs.db_auth_data import table_name
 
 
 url = 'https://rutracker.org/forum/tracker.php?f=2387'
@@ -31,14 +32,16 @@ def main():
         # while not result:
         #     result = foo()
 
-        processes_count = 3
-
-        parser = rutracker.Parser()
-        book_urls = parser.get_book_urls()
-        prepared_urls = numpy.array_split(book_urls, processes_count)
-        pool = Pool(processes=processes_count)
-        pool.map(lambda urls: rutracker.Parser(book_urls=urls).get_books_data(), prepared_urls)
-
+        def get_ids():
+            return list(map(
+                lambda data: data['book_page_id'],
+                db_service.execute_query(f"""
+                    SELECT book_page_id
+                    FROM rutracker_books;
+                """)
+            ))
+        parser = rutracker.Parser(get_ids())
+        asyncio.run(parser.run())
         iii = 3
     except Exception as ex:
         print(ex)
@@ -85,35 +88,35 @@ def get_urls_by_years(year_from, year_to):
     return list(map(lambda year: f'{url}&nm={year}', range(year_from, year_to)))
 
 
-def update_data(par_name):
-    def get_empty_value_rows():
-        return db_service.execute_query(f"""
-            SELECT id, book_page_id
-            FROM rutracker_books
-            WHERE {par_name} = '';
-        """)
-    if par_name == "description":
-        rows = get_empty_value_rows()
-        print(f"all rows: {len(rows)}")
-        i = 1
-        queries = []
-        parser.first_login()
-        for row in rows:
-            book_page_url = f"{view_topic_url}?t={row['book_page_id']}"
-            value = parser.get_book_data_value_by_par_name(book_page_url, f"{par_name}")
-            if value is not None and str.strip(value) != "":
-                query = db_service.get_update_book_data_query(row['id'], f"{par_name}", f"'{value}'")
-                queries.append(str.strip(query))
-            else:
-                i = i
-            print(f"row i={i} finished")
-            i = i + 1
-            if i == 100:
-                break
-        db_service.execute_queries(queries)
-
-    return None
-
+# def update_data(par_name):
+#     def get_empty_value_rows():
+#         return db_service.execute_query(f"""
+#             SELECT id, book_page_id
+#             FROM {table_name}
+#             WHERE {par_name} = '';
+#         """)
+#     if par_name == "description":
+#         rows = get_empty_value_rows()
+#         print(f"all rows: {len(rows)}")
+#         i = 1
+#         queries = []
+#         parser.first_login()
+#         for row in rows:
+#             book_page_url = f"{view_topic_url}?t={row['book_page_id']}"
+#             value = parser.get_book_data_value_by_par_name(book_page_url, f"{par_name}")
+#             if value is not None and str.strip(value) != "":
+#                 query = db_service.get_update_book_data_query(row['id'], f"{par_name}", f"'{value}'")
+#                 queries.append(str.strip(query))
+#             else:
+#                 i = i
+#             print(f"row i={i} finished")
+#             i = i + 1
+#             if i == 100:
+#                 break
+#         db_service.execute_queries(queries)
+#
+#     return None
+#
 
 if __name__ == '__main__':
     main()

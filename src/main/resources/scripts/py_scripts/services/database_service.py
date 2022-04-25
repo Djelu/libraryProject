@@ -1,6 +1,6 @@
 import pymysql
 
-from configs.db_auth_data import host, port, user, password, db_name
+from configs.db_auth_data import host, port, user, password, db_name, table_name
 
 
 def exec_wrapper(execute, *args, commit=True):
@@ -116,7 +116,7 @@ def json_to_db(data):
         )"""
 
     values = map(get_values, data)
-    query = "INSERT INTO library.rutracker_books VALUES " + ",".join(values)
+    query = f"INSERT INTO {table_name} VALUES " + ",".join(values)
     return execute_query(query)
 
 
@@ -142,7 +142,7 @@ def additional_data_to_db(data):
         """
 
     values = "),(".join(map(get_values, data))
-    query = f"""INSERT INTO library.rutracker_books 
+    query = f"""INSERT INTO {table_name}
                     (id, img_url, magnet_link, tor_size, no_book) 
                 VALUES  ({values})
                 ON DUPLICATE KEY UPDATE 
@@ -155,13 +155,13 @@ def additional_data_to_db(data):
 
 
 def get_book_page_ids():
-    result = execute_query("SELECT book_page_id FROM library.rutracker_books ORDER BY book_page_id DESC;")
+    result = execute_query(f"SELECT book_page_id FROM {table_name} ORDER BY book_page_id DESC;")
     return list(map(lambda it: it['book_page_id'], result))
 
 
 def get_update_book_data_query(row_id, par_name, par_value):
     query = f"""
-        UPDATE rutracker_books
+        UPDATE {table_name}
         SET {par_name} = {par_value}
         WHERE id = {row_id}
     """
