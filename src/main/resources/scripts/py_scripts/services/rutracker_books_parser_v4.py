@@ -1,0 +1,184 @@
+import json
+import os
+import pickle
+import time
+import numpy
+import asyncio
+import aiohttp
+
+import bs4.element
+from bs4 import BeautifulSoup as BeautifulSoup
+from services import database_service as db_service
+
+from configs.proxy_auth_data import login as proxy_login, password as proxy_password, server as proxy_server
+from configs.rutracker_auth_data import login_username, login_password, login
+
+
+class Parser:
+    def __init__(self, ids=None):
+        self.session = None
+        self.login_url = "https://rutracker.org/forum/login.php"
+        self.book_search_url = "https://rutracker.org/forum/tracker.php?f=2387"
+        if ids is not None:
+            self.book_urls = list(map(
+                lambda id: f"https://rutracker.org/forum/viewtopic.php?t={id}",
+                ids
+            ))
+        else:
+            self.book_urls = []
+        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " \
+                          "Chrome/102.0.5005.62 Safari/537.36 "
+        self.cookie = {"bb_guid": "xiSSh3NZkETu",
+                       "bb_ssl": "1",
+                       "bb_session": "0-47395776-dNcNUwZtfbJdkPMyVT72",
+                       "_ym_uid": "16538481171066421974",
+                       "_ym_d": "1653848117",
+                       "_ym_isad": "2"}
+        # self.cookie_settings = {"bb_session": "0-47395776-dNcNUwZtfbJdkPMyVT72",
+        #               "expires": "Wed, 26-May-2032 18:06:33 GMT",
+        #               "Max-Age":"315360000",
+        #               "path":"/forum/",
+        #               "domain":".rutracker.org",
+        #               "secure": "true",
+        #               "HttpOnly": "true"}
+
+    async def run(self):
+        try:
+            book_urls_len = len(self.book_urls)
+            if book_urls_len > 0:
+                book_urls_list = numpy.array_split(self.book_urls, book_urls_len)
+            else:
+                book_urls_list = await self.get_book_url_list()
+            book_urls_list = book_urls_list[0:1]
+
+            await asyncio.gather(*[self.get_books_data_and_export_to_db(book_urls) for book_urls in book_urls_list])
+        finally:
+            self.session.close()
+
+    async def get_book_url_list(self):
+        async def foo():
+            urls = await self.get_page_urls()
+            return [await self.get_book_page_urls(url) for url in urls]
+        f = await foo()
+        return list(map(
+            lambda url: [url],
+            self.flatten(f)
+        ))
+
+    async def export_to_db(self, books_data):
+        if len(books_data) == 0:
+            return print("done!")
+        res = db_service.json_to_db(books_data)
+        if isinstance(res, Exception):
+            print("json_to_db exception:\n" + str(res))
+        else:
+            print("done!")
+
+    async def get_books_data_and_export_to_db(self, book_urls=[]):
+        book_data_list = [
+            await self.get_book_data(url)
+            for url in book_urls
+        ]
+        await self.export_to_db(book_data_list)
+
+    async def get_page_content(self, book_url):
+        header = {'user-agent': self.user_agent}
+        if self.session is None:
+            # async with aiohttp.ClientSession(cookies=self.cookie, headers=header) as session:
+            session = aiohttp.ClientSession(cookies=self.cookie, headers=header)
+            data = {'login_username': f'{login_username}',
+                    'login_password': f'{login_password}',
+                    'login': f'{login}'}
+            async with session.post(self.login_url, data=data) as login_resp:
+                if await login_resp.text():
+                    self.session = session
+                else:
+                    await session.close()
+        async with self.session.get(book_url) as resp:
+            return await resp.text()
+
+    def flatten(self, t):
+        return [item for sublist in t for item in sublist]
+
+    async def get_page_urls(self):
+        content = await self.get_page_content(self.book_search_url)
+        soup = BeautifulSoup(content, "html.parser")
+        elems = soup.find_all("a", {"class": "pg"})
+        result = list(set(map(
+            lambda el: f'https://rutracker.org/forum/tracker.php?{el.attrs["href"].split("&")[-1]}&search_id=MTjK8rxRRY1Q',
+            elems
+        )))
+        result.insert(0, self.book_search_url)
+        return result
+
+    async def get_book_page_urls(self, book_list_url):
+        content = await self.get_page_content(book_list_url)
+        soup = BeautifulSoup(content, "html.parser")
+        table = soup.find("table", {"id": "tor-tbl"})
+        elems = table.find_all("a", {"class": "bold"})
+        result = list(map(lambda el: el.attrs['href'], elems))
+        return result
+
+    async def get_book_data(self, book_page_url):
+        book_data = {}
+        content = await self.get_page_content(book_page_url)
+        soup = BeautifulSoup(content, "html.parser")
+        root_item = soup.find("div", {"class": "post_body"})
+        if root_item is None:
+            book_data["no_book"] = True
+            return book_data
+        book_data["no_book"] = False
+
+        img = root_item.find("img", {"class": "postImg"})
+        if "post-img-broken" in img.attrs['class']:
+            img_url = img.attrs['title']
+        else:
+            img_url = img.attrs['src']
+        book_data["img_url"] = img_url
+
+        book_page_id = book_page_url.split("?t=")[1]
+        book_data["book_page_id"] = book_page_id
+
+        table = soup.find("div", {"class": "post_wrap"}).find("table")
+        if table is not None:
+            a = table.find("a", {"data-topic_id": book_page_id})
+            if a is not None:
+                magnet_link = a.attrs['href']
+                tor_size = table.find("span", {"id": "tor-size-humn"}).text
+                book_data["magnet_link"] = magnet_link
+                book_data["tor_size"] = tor_size
+
+        matches = db_service.matches
+        for key in matches.keys():
+            book_data[key] = self.get_book_data_by_type(root_item, matches[key])
+
+        return book_data
+
+    def get_book_data_by_type(self, root_item, book_data_type):
+        items = root_item.contents
+
+        def cut_off_excess(str):
+            if str.startswith(":"):
+                str = str.replace(":", "", 1)
+            return str.strip()
+
+        for i in range(len(items)):
+            item = items[i]
+            if str.startswith(str.lstrip(item.text), book_data_type):
+                if book_data_type == "Описание":
+                    text = str.strip(item.text[10:])
+                    if len(text) > 0:
+                        val = text
+                    else:
+                        val = ""
+                    for j in range(i + 1, len(items)):
+                        it = items[j]
+                        if type(it) == bs4.element.NavigableString:
+                            val += it.text + "\n\n"
+                        else:
+                            if it.attrs.get("class") is not None and "post-hr" in it.attrs.get("class"):
+                                break
+                    return cut_off_excess(val)
+                else:
+                    return cut_off_excess(items[i + 1].text)
+        return ""

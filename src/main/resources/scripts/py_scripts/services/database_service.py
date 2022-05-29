@@ -2,6 +2,24 @@ import pymysql
 
 from configs.db_auth_data import host, port, user, password, db_name, table_name
 
+matches = {
+    "year": "Год выпуска",
+    "last_name": "Фамилия автора",
+    "fist_name": "Имя автора",
+    "executor": "Исполнитель",
+    "cycle_name": "Цикл/серия",
+    "book_number": "Номер книги",
+    "genre": "Жанр",
+    "edition_type": "Тип издания",
+    "category": "Категория",
+    "audio_codec": "Аудиокодек",
+    "bitrate": "Битрейт",
+    "bitrate_type": "Вид битрейта",
+    "sampling_frequency": "Частота дискретизации",
+    "count_of_channels": "Количество каналов (моно-стерео)",
+    "book_duration": "Время звучания",
+    "description": "Описание",
+}
 
 def exec_wrapper(execute, *args, commit=True):
     conn = None
@@ -167,3 +185,13 @@ def get_update_book_data_query(row_id, par_name, par_value):
     """
     # print(query)
     return query
+
+
+def get_ids():
+    return list(map(
+        lambda data: data['book_page_id'],
+        execute_query(f"""
+            SELECT book_page_id
+            FROM rutracker_books;
+        """)
+    ))

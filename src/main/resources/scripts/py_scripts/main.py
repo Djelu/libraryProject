@@ -6,7 +6,7 @@ from multiprocessing import Pool
 
 
 from services import database_service as db_service
-from services import rutracker_books_parser_v3 as rutracker
+from services import rutracker_books_parser_v4 as rutracker
 from configs.db_auth_data import table_name
 
 
@@ -16,31 +16,8 @@ view_topic_url = 'https://rutracker.org/forum/viewtopic.php'
 
 def main():
     try:
-        # parser.parse({
-        #     "exclude_ids": db_service.get_book_page_ids(),
-        #     "urls": get_urls_by_years(1990, 2022)
-        # }, extend_books_to_db)
-
-        # res = db_service.execute_query("select id, book_page_id, url from library.rutracker_books;")
-        # result = parser.parse_additional_data(res)
-        # extend_additional_data_to_db([])
-        # if isinstance(res, Exception):
-        #     print("execute_query exception:\n" + str(res))
-
-
-        # result = foo()
-        # while not result:
-        #     result = foo()
-
-        def get_ids():
-            return list(map(
-                lambda data: data['book_page_id'],
-                db_service.execute_query(f"""
-                    SELECT book_page_id
-                    FROM rutracker_books;
-                """)
-            ))
-        parser = rutracker.Parser(get_ids())
+        # ids = db_service.get_ids()
+        parser = rutracker.Parser()
         asyncio.run(parser.run())
         iii = 3
     except Exception as ex:
