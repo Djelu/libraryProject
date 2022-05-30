@@ -91,17 +91,6 @@ class Parser:
     def flatten(self, t):
         return [item for sublist in t for item in sublist]
 
-    # async def get_page_urls(self, page_index):
-    #     content = await self.get_page_content(self.book_search_url, page_index)
-    #     soup = BeautifulSoup(content, "html.parser")
-    #     elems = soup.find_all("a", {"class": "pg"})
-    #     result = list(set(map(
-    #         lambda el: f'https://rutracker.org/forum/tracker.php?{el.attrs["href"].split("&")[-1]}&search_id=MTjK8rxRRY1Q',
-    #         elems
-    #     )))
-    #     result.insert(0, self.book_search_url)
-    #     return result
-
     async def get_url(self, page_index):
         if page_index == 1:
             return self.book_search_url
