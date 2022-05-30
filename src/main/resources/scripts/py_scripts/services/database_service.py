@@ -108,12 +108,15 @@ def execute_queries(queries):
 
 def json_to_db(data):
     def get_values(book_data):
-        book_page_id = book_data['url'].split("t=")[1]
+        if book_data.get('book_page_id') is None:
+            book_page_id = book_data['url'].split("t=")[1]
+        else:
+            book_page_id = book_data['book_page_id']
         return f"""(
            default,
            '{book_page_id}',
            '{book_data['url']}', 
-           '{book_data['row_name']}', 
+           '', 
            '{book_data['book_name']}', 
            '{book_data['year']}', 
            '{book_data['last_name']}', 

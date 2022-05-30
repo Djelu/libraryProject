@@ -16,7 +16,7 @@ from configs.rutracker_auth_data import login_username, login_password, login
 
 class Parser:
     def __init__(self, ids=None):
-        self.session = None
+        self.session = {}
         self.login_url = "https://rutracker.org/forum/login.php"
         self.book_search_url = "https://rutracker.org/forum/tracker.php?f=2387"
         if ids is not None:
@@ -49,21 +49,19 @@ class Parser:
                 book_urls_list = numpy.array_split(self.book_urls, book_urls_len)
             else:
                 book_urls_list = await self.get_book_url_list()
-            book_urls_list = book_urls_list[0:1]
+            book_urls_list = book_urls_list[0:2]
 
-            await asyncio.gather(*[self.get_books_data_and_export_to_db(book_urls) for book_urls in book_urls_list])
+            i = 0
+            books_data_list = await asyncio.gather(*[self.get_book_data(book_url) for book_url in book_urls_list])
+            i = 0
+            await self.export_to_db(books_data_list)
         finally:
-            self.session.close()
+            for i in self.session:
+                self.session.get(i).close()
+                j = 0
 
     async def get_book_url_list(self):
-        async def foo():
-            urls = await self.get_page_urls()
-            return [await self.get_book_page_urls(url) for url in urls]
-        f = await foo()
-        return list(map(
-            lambda url: [url],
-            self.flatten(f)
-        ))
+        return self.flatten([await self.get_book_page_urls(page_index) for page_index in range(1, 11)])
 
     async def export_to_db(self, books_data):
         if len(books_data) == 0:
@@ -74,16 +72,9 @@ class Parser:
         else:
             print("done!")
 
-    async def get_books_data_and_export_to_db(self, book_urls=[]):
-        book_data_list = [
-            await self.get_book_data(url)
-            for url in book_urls
-        ]
-        await self.export_to_db(book_data_list)
-
-    async def get_page_content(self, book_url):
+    async def get_page_content(self, book_url, page_index):
         header = {'user-agent': self.user_agent}
-        if self.session is None:
+        if self.session.get(page_index) is None:
             # async with aiohttp.ClientSession(cookies=self.cookie, headers=header) as session:
             session = aiohttp.ClientSession(cookies=self.cookie, headers=header)
             data = {'login_username': f'{login_username}',
@@ -91,37 +82,45 @@ class Parser:
                     'login': f'{login}'}
             async with session.post(self.login_url, data=data) as login_resp:
                 if await login_resp.text():
-                    self.session = session
+                    self.session[page_index] = session
                 else:
                     await session.close()
-        async with self.session.get(book_url) as resp:
+        async with self.session[page_index].get(book_url) as resp:
             return await resp.text()
 
     def flatten(self, t):
         return [item for sublist in t for item in sublist]
 
-    async def get_page_urls(self):
-        content = await self.get_page_content(self.book_search_url)
+    # async def get_page_urls(self, page_index):
+    #     content = await self.get_page_content(self.book_search_url, page_index)
+    #     soup = BeautifulSoup(content, "html.parser")
+    #     elems = soup.find_all("a", {"class": "pg"})
+    #     result = list(set(map(
+    #         lambda el: f'https://rutracker.org/forum/tracker.php?{el.attrs["href"].split("&")[-1]}&search_id=MTjK8rxRRY1Q',
+    #         elems
+    #     )))
+    #     result.insert(0, self.book_search_url)
+    #     return result
+
+    async def get_url(self, page_index):
+        if page_index == 1:
+            return self.book_search_url
+        content = await self.get_page_content(self.book_search_url, page_index)
         soup = BeautifulSoup(content, "html.parser")
         elems = soup.find_all("a", {"class": "pg"})
-        result = list(set(map(
-            lambda el: f'https://rutracker.org/forum/tracker.php?{el.attrs["href"].split("&")[-1]}&search_id=MTjK8rxRRY1Q',
-            elems
-        )))
-        result.insert(0, self.book_search_url)
-        return result
+        return f'https://rutracker.org/forum/{elems[page_index].attrs["href"]}'
 
-    async def get_book_page_urls(self, book_list_url):
-        content = await self.get_page_content(book_list_url)
+    async def get_book_page_urls(self, page_index):
+        content = await self.get_page_content(await self.get_url(page_index), page_index)
         soup = BeautifulSoup(content, "html.parser")
         table = soup.find("table", {"id": "tor-tbl"})
         elems = table.find_all("a", {"class": "bold"})
-        result = list(map(lambda el: el.attrs['href'], elems))
+        result = list(map(lambda el: f"https://rutracker.org/forum/{el.attrs['href']}", elems))
         return result
 
     async def get_book_data(self, book_page_url):
         book_data = {}
-        content = await self.get_page_content(book_page_url)
+        content = await self.get_page_content(book_page_url, 0)
         soup = BeautifulSoup(content, "html.parser")
         root_item = soup.find("div", {"class": "post_body"})
         if root_item is None:
@@ -129,12 +128,20 @@ class Parser:
             return book_data
         book_data["no_book"] = False
 
+        book_data["url"] = book_page_url
+        book_data["book_name"] = root_item.find("span").text
+
         img = root_item.find("img", {"class": "postImg"})
-        if "post-img-broken" in img.attrs['class']:
-            img_url = img.attrs['title']
-        else:
-            img_url = img.attrs['src']
-        book_data["img_url"] = img_url
+        if img is None:
+            img = root_item.find("var", {"class": "postImg"})
+        if img is not None:
+            if "post-img-broken" in img.attrs['class']:
+                img_url = img.attrs['title']
+            elif img.attrs.get('src') is not None:
+                img_url = img.attrs['src']
+            else:
+                img_url = img.attrs['title']
+            book_data["img_url"] = img_url
 
         book_page_id = book_page_url.split("?t=")[1]
         book_data["book_page_id"] = book_page_id
