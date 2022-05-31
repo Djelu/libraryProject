@@ -5,4 +5,4 @@ user = "user1"
 password = "5MV,j-=$E5+7b<Ut"
 # 65T3KsHWkD58
 db_name = "library"
-table_name = "rutracker_books_test"
+table_name = "rutracker_books"

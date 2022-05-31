@@ -21,6 +21,34 @@ matches = {
     "description": "Описание",
 }
 
+columns = [
+    "book_page_id",
+    "url",
+    "row_name",
+    "book_name",
+    "year",
+    "last_name",
+    "fist_name",
+    "executor",
+    "cycle_name",
+    "book_number",
+    "genre",
+    "edition_type",
+    "category",
+    "audio_codec",
+    "bitrate",
+    "bitrate_type",
+    "sampling_frequency",
+    "count_of_channels",
+    "book_duration",
+    "description",
+    "img_url",
+    "magnet_link",
+    "tor_size",
+    "no_book"
+]
+
+
 def exec_wrapper(execute, *args, commit=True):
     conn = None
     try:
@@ -107,37 +135,39 @@ def execute_queries(queries):
 
 
 def json_to_db(data):
+    def get_value(book_data, key):
+        def get_sub_val():
+            if key == "book_page_id":
+                if book_data.get(key) is None:
+                    if book_data.get('url') is not None:
+                        return book_data['url'].split("t=")[1]
+                    else:
+                        return ""
+                else:
+                    return book_data[key]
+            elif book_data.get(key) is None:
+                return ""
+            elif key == "no_book":
+                return int(book_data[key])
+            return book_data[key]
+
+        def add_quotes(value):
+            if key == "no_book":
+                return value
+            return f"'{value}'"
+
+        return add_quotes(get_sub_val())
+
     def get_values(book_data):
-        if book_data.get('book_page_id') is None:
-            book_page_id = book_data['url'].split("t=")[1]
-        else:
-            book_page_id = book_data['book_page_id']
         return f"""(
            default,
-           '{book_page_id}',
-           '{book_data['url']}', 
-           '', 
-           '{book_data['book_name']}', 
-           '{book_data['year']}', 
-           '{book_data['last_name']}', 
-           '{book_data['fist_name']}', 
-           '{book_data['executor']}', 
-           '{book_data['cycle_name']}', 
-           '{book_data['book_number']}', 
-           '{book_data['genre']}', 
-           '{book_data['edition_type']}', 
-           '{book_data['category']}', 
-           '{book_data['audio_codec']}', 
-           '{book_data['bitrate']}', 
-           '{book_data['bitrate_type']}', 
-           '{book_data['sampling_frequency']}', 
-           '{book_data['count_of_channels']}', 
-           '{book_data['book_duration']}', 
-           '{book_data['description']}'
+           {",".join(map(lambda col_name: f"{get_value(book_data, col_name)}", columns))}
         )"""
 
+    columns_for_insert = f"id,{','.join(columns)}"
     values = map(get_values, data)
-    query = f"INSERT INTO {table_name} VALUES " + ",".join(values)
+    query = f"INSERT INTO {table_name} ({columns_for_insert}) VALUES " + ",".join(values)
+    print(query)
     return execute_query(query)
 
 

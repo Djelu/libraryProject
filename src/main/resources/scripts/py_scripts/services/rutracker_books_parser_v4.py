@@ -19,13 +19,16 @@ class Parser:
         self.session = {}
         self.login_url = "https://rutracker.org/forum/login.php"
         self.book_search_url = "https://rutracker.org/forum/tracker.php?f=2387"
-        if ids is not None:
-            self.book_urls = list(map(
-                lambda id: f"https://rutracker.org/forum/viewtopic.php?t={id}",
-                ids
-            ))
+        # if ids is not None:
+        #     self.book_urls = list(map(
+        #         lambda id: f"https://rutracker.org/forum/viewtopic.php?t={id}",
+        #         ids
+        #     ))
+        # else:
+        if ids is None:
+            self.ids = sorted(db_service.get_ids(), key=int, reverse=True)
         else:
-            self.book_urls = []
+            self.ids = ids
         self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " \
                           "Chrome/102.0.5005.62 Safari/537.36 "
         self.cookie = {"bb_guid": "xiSSh3NZkETu",
@@ -44,24 +47,18 @@ class Parser:
 
     async def run(self):
         try:
-            book_urls_len = len(self.book_urls)
-            if book_urls_len > 0:
-                book_urls_list = numpy.array_split(self.book_urls, book_urls_len)
-            else:
-                book_urls_list = await self.get_book_url_list()
+            # book_urls_len = len(self.ids)
+            # if book_urls_len > 0:
+            #     book_urls_list = numpy.array_split(self.ids, book_urls_len)
+            # else:
+            book_urls_list = await self.get_book_url_list()
             book_urls_list = book_urls_list[0:2]
-
-            i = 0
             books_data_list = await asyncio.gather(*[self.get_book_data(book_url) for book_url in book_urls_list])
-            i = 0
             await self.export_to_db(books_data_list)
         finally:
             for i in self.session:
-                self.session.get(i).close()
+                await self.session.get(i).close()
                 j = 0
-
-    async def get_book_url_list(self):
-        return self.flatten([await self.get_book_page_urls(page_index) for page_index in range(1, 11)])
 
     async def export_to_db(self, books_data):
         if len(books_data) == 0:
@@ -72,10 +69,12 @@ class Parser:
         else:
             print("done!")
 
+    async def get_book_url_list(self):
+        return self.flatten([await self.get_book_page_urls(page_index) for page_index in range(1, 11)])
+
     async def get_page_content(self, book_url, page_index):
         header = {'user-agent': self.user_agent}
         if self.session.get(page_index) is None:
-            # async with aiohttp.ClientSession(cookies=self.cookie, headers=header) as session:
             session = aiohttp.ClientSession(cookies=self.cookie, headers=header)
             data = {'login_username': f'{login_username}',
                     'login_password': f'{login_password}',
@@ -104,7 +103,16 @@ class Parser:
         soup = BeautifulSoup(content, "html.parser")
         table = soup.find("table", {"id": "tor-tbl"})
         elems = table.find_all("a", {"class": "bold"})
-        result = list(map(lambda el: f"https://rutracker.org/forum/{el.attrs['href']}", elems))
+        result = list(map(
+            lambda href: f"https://rutracker.org/forum/{href}",
+            filter(
+                lambda href: not any(href.split("?t=")[1] == id for id in self.ids),
+                list(map(
+                    lambda el: el.attrs['href'],
+                    elems
+                ))
+            )
+        ))
         return result
 
     async def get_book_data(self, book_page_url):
@@ -140,9 +148,11 @@ class Parser:
             a = table.find("a", {"data-topic_id": book_page_id})
             if a is not None:
                 magnet_link = a.attrs['href']
-                tor_size = table.find("span", {"id": "tor-size-humn"}).text
-                book_data["magnet_link"] = magnet_link
-                book_data["tor_size"] = tor_size
+                t = table.find("span", {"id": "tor-size-humn"})
+                if t is not None:
+                    tor_size = t.text
+                    book_data["magnet_link"] = magnet_link
+                    book_data["tor_size"] = tor_size
 
         matches = db_service.matches
         for key in matches.keys():

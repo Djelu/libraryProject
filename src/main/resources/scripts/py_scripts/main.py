@@ -18,19 +18,11 @@ def main():
     try:
         # ids = db_service.get_ids()
         parser = rutracker.Parser()
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(parser.run())
         iii = 3
     except Exception as ex:
         print(ex)
-
-
-# def foo():
-#     try:
-#         update_data("description")
-#         return True
-#     except Exception as ex:
-#         print(ex)
-#         return False
 
 
 def extend_books_to_db(books_data, index):
