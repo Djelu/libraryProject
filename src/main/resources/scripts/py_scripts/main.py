@@ -6,7 +6,7 @@ from multiprocessing import Pool
 
 
 from services import database_service as db_service
-from services import rutracker_books_parser_v4 as rutracker
+from services import rutracker_books_parser as rutracker
 from configs.db_auth_data import table_name
 
 
