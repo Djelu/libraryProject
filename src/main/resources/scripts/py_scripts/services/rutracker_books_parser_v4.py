@@ -37,22 +37,11 @@ class Parser:
                        "_ym_uid": "16538481171066421974",
                        "_ym_d": "1653848117",
                        "_ym_isad": "2"}
-        # self.cookie_settings = {"bb_session": "0-47395776-dNcNUwZtfbJdkPMyVT72",
-        #               "expires": "Wed, 26-May-2032 18:06:33 GMT",
-        #               "Max-Age":"315360000",
-        #               "path":"/forum/",
-        #               "domain":".rutracker.org",
-        #               "secure": "true",
-        #               "HttpOnly": "true"}
 
     async def run(self):
         try:
-            # book_urls_len = len(self.ids)
-            # if book_urls_len > 0:
-            #     book_urls_list = numpy.array_split(self.ids, book_urls_len)
-            # else:
             book_urls_list = await self.get_book_url_list()
-            book_urls_list = book_urls_list[0:2]
+            # book_urls_list = book_urls_list[0:2]
             books_data_list = await asyncio.gather(*[self.get_book_data(book_url) for book_url in book_urls_list])
             await self.export_to_db(books_data_list)
         finally:
